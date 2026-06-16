@@ -1,6 +1,34 @@
 import { createElement, forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { createBrandbot } from './robot-core.js';
 import model from './nexbot-model.js';
+import type { BrandbotInstance, BrandBotHandle, Color, TrackPointer } from './types.js';
+
+export interface BrandBotProps {
+  primary?: Color;
+  accent?: Color;
+  visor?: Color;
+  hands?: Color;
+  eyes?: Color;
+  logoText?: string;
+  logoColor?: Color;
+  /** Image logo: URL, data URI, or object URL. Overrides `logoText`. */
+  logoImage?: string | null;
+  /** `false` shows the upper body only. */
+  legs?: boolean;
+  /** Let visitors drag to rotate (for demos). */
+  orbit?: boolean;
+  /** One-time zoom-in when the model loads. */
+  intro?: boolean;
+  /** What the head watches. */
+  trackPointer?: TrackPointer;
+  /** Soft ground shadow. */
+  shadow?: boolean;
+  /** Load a different glTF instead of the bundled model. */
+  modelUrl?: string;
+  className?: string;
+  style?: CSSProperties;
+}
 
 /**
  * <BrandBot primary="#13294b" eyes="#7fd4ff" logoText="ACME"
@@ -13,7 +41,7 @@ import model from './nexbot-model.js';
  * All color/logo props are live — change them and the robot updates.
  * Use a ref for the imperative bits: ref.current.spin() / ref.current.replay()
  */
-export const BrandBot = forwardRef(function BrandBot(props, ref) {
+export const BrandBot = forwardRef<BrandBotHandle, BrandBotProps>(function BrandBot(props, ref) {
   const {
     primary, accent, visor, hands, eyes,
     logoText, logoColor, logoImage, legs = true,
@@ -22,10 +50,11 @@ export const BrandBot = forwardRef(function BrandBot(props, ref) {
     className, style,
   } = props;
 
-  const el = useRef(null);
-  const bot = useRef(null);
+  const el = useRef<HTMLDivElement>(null);
+  const bot = useRef<BrandbotInstance | null>(null);
 
   useEffect(() => {
+    if (!el.current) return;
     bot.current = createBrandbot(el.current, {
       gltf: modelUrl ? null : model,
       modelUrl,
@@ -41,6 +70,7 @@ export const BrandBot = forwardRef(function BrandBot(props, ref) {
     });
     return () => bot.current?.dispose();
     // structural options rebuild the scene; colors/logo flow through below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelUrl, trackPointer, shadow, orbit, intro]);
 
   useEffect(() => {
@@ -50,7 +80,7 @@ export const BrandBot = forwardRef(function BrandBot(props, ref) {
   useImperativeHandle(ref, () => ({
     spin: () => bot.current?.spin(),
     replay: () => bot.current?.replay(),
-    set: o => bot.current?.set(o),
+    set: (o) => bot.current?.set(o),
   }), []);
 
   return createElement('div', {

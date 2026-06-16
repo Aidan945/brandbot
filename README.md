@@ -1,6 +1,6 @@
 # BrandBot 🤖
 
-**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that floats, gestures, blinks, and watches the visitor's cursor — no Spline runtime, no build step. The model is bundled, so there's nothing to host.
+**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that floats, gestures, blinks, and watches the visitor's cursor — no Spline runtime. Written in TypeScript, ships full type declarations, and bundles the model so there's nothing to host.
 
 **[▶ Live demo](https://aidan945.github.io/brandbot/demo/)** · **[Configure & copy code](https://aidan945.github.io/brandbot/demo/configure.html)**
 
@@ -105,6 +105,17 @@ The `demo/` folder is a no-build static site (works on GitHub Pages):
 - **`demo/configure.html`** — live configurator with copy-the-code.
 
 Run `python3 -m http.server` in the package folder and open `demo/index.html`.
+
+## Development
+
+```bash
+npm install      # toolchain (typescript, @types/three, @types/react)
+npm run build    # compile src/*.ts → dist/ (+ .d.ts) and copy the model
+npm run typecheck
+```
+
+Source lives in `src/` (TypeScript). The committed `dist/` is what the demo and
+npm package consume; rebuild it after changing `src/`.
 
 ## License
 

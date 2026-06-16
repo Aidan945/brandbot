@@ -1,0 +1,11 @@
+# Make GitHub's language stats reflect the TypeScript source, not generated
+# output or the bundled model data.
+
+# The bundled NEXBOT model is data (exported glTF), not hand-written source.
+src/nexbot-model.js linguist-generated=true
+
+# Compiled output, committed so GitHub Pages can serve the demo with no build.
+dist/** linguist-generated=true
+
+# The demo pages are a vanilla no-build site (htm + CDN), not the library.
+demo/** linguist-vendored=true

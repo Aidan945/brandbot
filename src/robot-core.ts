@@ -8,23 +8,38 @@
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { DecalGeometry } from 'three/addons/geometries/DecalGeometry.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import type { BrandbotOptions, BrandbotInstance, BrandbotUpdate } from './types.js';
+
+/** Per-arm articulation, with calibrated rotation signs (one arm is mirrored). */
+interface Rig {
+  shoulder: THREE.Group;
+  elbow: THREE.Group | null;
+  twist: THREE.Group | null;
+  handRef: THREE.Object3D;
+  side: number;
+  raiseSign: number;
+  outSign: number;
+  bendSign: number;
+  splaySign: number;
+}
 
 const DEFAULTS = {
-  gltf: null,            // parsed glTF JSON object (e.g. `import model from './nexbot-model.js'`)
-  modelUrl: null,        // ...or a URL to a .gltf/.glb (used if `gltf` not given)
-  trackPointer: 'window',// 'window' | 'element' | false
+  gltf: null as unknown,
+  modelUrl: null as string | null,
+  trackPointer: 'window' as BrandbotOptions['trackPointer'],
   shadow: true,
-  legs: true,            // false = upper body only
-  orbit: false,          // true = drag to rotate (demos); false = locked, faces forward
-  intro: true,           // one-time zoom-in when the model loads
+  legs: true,
+  orbit: false,
+  intro: true,
   camera: { position: [0, 2.95, 5.6], target: [0, 2.95, 0], fov: 34 },
   primary: '#17171c', accent: '#08080a', visor: '#b0b0b8', hands: '#77777e',
-  eyes: '#e9f4ff', logoText: '', logoColor: '#ffffff', logoImage: null,
+  eyes: '#e9f4ff', logoText: '', logoColor: '#ffffff', logoImage: null as string | null,
 };
 
-export function createBrandbot(container, options = {}) {
+export function createBrandbot(container: HTMLElement, options: BrandbotOptions = {}): BrandbotInstance {
   const opts = { ...DEFAULTS, ...options };
 
   /* ------------------------------------------------------------ renderer */
@@ -47,7 +62,7 @@ export function createBrandbot(container, options = {}) {
   {
     const env = new THREE.Scene();
     env.background = new THREE.Color(0x000000);
-    const strip = (w, h, intensity, x, y, z) => {
+    const strip = (w: number, h: number, intensity: number, x: number, y: number, z: number) => {
       const m = new THREE.Mesh(
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(intensity), side: THREE.DoubleSide })
@@ -67,8 +82,8 @@ export function createBrandbot(container, options = {}) {
   }
 
   const camera = new THREE.PerspectiveCamera(opts.camera.fov, 1, 0.1, 100);
-  const camTarget = new THREE.Vector3(...opts.camera.target);
-  const camEnd = new THREE.Vector3(...opts.camera.position);
+  const camTarget = new THREE.Vector3(opts.camera.target[0], opts.camera.target[1], opts.camera.target[2]);
+  const camEnd = new THREE.Vector3(opts.camera.position[0], opts.camera.position[1], opts.camera.position[2]);
   // intro starts pushed back along the view axis (and a touch higher) and
   // dollies in to the final position — a "zoom in" entrance
   const camStart = camEnd.clone().sub(camTarget).multiplyScalar(1.75).add(camTarget);
@@ -78,7 +93,7 @@ export function createBrandbot(container, options = {}) {
 
   // drag-to-rotate, only when asked (demos). Off by default so the component
   // sits locked in its box and faces forward in real apps.
-  let controls = null;
+  let controls: OrbitControls | null = null;
   if (opts.orbit) {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.copy(camTarget);
@@ -108,9 +123,8 @@ export function createBrandbot(container, options = {}) {
   rimR.position.set(6, 4, -2.5);
   scene.add(rimR);
 
-  let ground = null;
   if (opts.shadow) {
-    ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.16 }));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.16 }));
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
@@ -120,10 +134,10 @@ export function createBrandbot(container, options = {}) {
   // Weave maps are painted in NORMALIZED tones (base→white) and darkened via
   // material.color — so user-chosen colors actually show instead of being
   // multiplied into black by a dark texture.
-  function makeCarbonTexture(size = 256, cell = 16, base = '#2c2c2c') {
+  function makeCarbonTexture(size = 256, cell = 16, base = '#2c2c2c'): THREE.CanvasTexture {
     const c = document.createElement('canvas');
     c.width = c.height = size;
-    const g = c.getContext('2d');
+    const g = c.getContext('2d')!;
     g.fillStyle = base; g.fillRect(0, 0, size, size);
     for (let y = 0; y < size / cell; y++) {
       for (let x = 0; x < size / cell; x++) {
@@ -144,7 +158,7 @@ export function createBrandbot(container, options = {}) {
   const carbonTex = makeCarbonTexture(256, 16, '#2c2c2c');         // strong weave (arms)
   const carbonTexSubtle = makeCarbonTexture(256, 16, '#6e6e72');   // barely-there weave (torso)
 
-  function boxUV(geometry, scale) {
+  function boxUV(geometry: THREE.BufferGeometry, scale: number): void {
     if (geometry.userData.boxUV) return;
     geometry.userData.boxUV = true;
     const pos = geometry.attributes.position, nor = geometry.attributes.normal;
@@ -152,7 +166,7 @@ export function createBrandbot(container, options = {}) {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const nx = Math.abs(nor.getX(i)), ny = Math.abs(nor.getY(i)), nz = Math.abs(nor.getZ(i));
-      let u, v;
+      let u: number, v: number;
       if (nx >= ny && nx >= nz) { u = z; v = y; }
       else if (ny >= nx && ny >= nz) { u = x; v = z; }
       else { u = x; v = y; }
@@ -177,9 +191,9 @@ export function createBrandbot(container, options = {}) {
   eyeTexture.colorSpace = THREE.SRGBColorSpace;
 
   let eyeColor = opts.eyes;
-  function drawEyes(color, squash = 0) {
+  function drawEyes(color: string, squash = 0): void {
     eyeColor = color;
-    const g = eyeCanvas.getContext('2d');
+    const g = eyeCanvas.getContext('2d')!;
     g.clearRect(0, 0, 512, 256);
     g.fillStyle = color;
     // squash 0..1 collapses the dot rows (blink)
@@ -201,8 +215,8 @@ export function createBrandbot(container, options = {}) {
   logoTexture.colorSpace = THREE.SRGBColorSpace;
   logoTexture.anisotropy = 8;
 
-  function drawLogoText(text, color) {
-    const g = logoCanvas.getContext('2d');
+  function drawLogoText(text: string, color: string): void {
+    const g = logoCanvas.getContext('2d')!;
     g.clearRect(0, 0, 512, 512);
     if (text) {
       g.fillStyle = color;
@@ -219,8 +233,8 @@ export function createBrandbot(container, options = {}) {
     logoTexture.needsUpdate = true;
   }
 
-  function drawLogoImage(img) {
-    const g = logoCanvas.getContext('2d');
+  function drawLogoImage(img: HTMLImageElement): void {
+    const g = logoCanvas.getContext('2d')!;
     g.clearRect(0, 0, 512, 512);
     const s = Math.min(440 / img.width, 440 / img.height);
     const w = img.width * s, h = img.height * s;
@@ -232,10 +246,12 @@ export function createBrandbot(container, options = {}) {
   const robot = new THREE.Group();
   scene.add(robot);
 
-  let headPivot = null, waistPivot = null, bottomNode = null;
-  const armRigs = [];
+  let headPivot: THREE.Group | null = null;
+  let waistPivot: THREE.Group | null = null;
+  let bottomNode: THREE.Object3D | null = null;
+  const armRigs: Rig[] = [];
 
-  function addDecal(target, position, size, material) {
+  function addDecal(target: THREE.Mesh, position: THREE.Vector3, size: THREE.Vector3, material: THREE.Material): THREE.Mesh {
     target.updateWorldMatrix(true, false);
     const geo = new DecalGeometry(target, position, new THREE.Euler(), size);
     geo.applyMatrix4(new THREE.Matrix4().copy(target.matrixWorld).invert());
@@ -247,8 +263,8 @@ export function createBrandbot(container, options = {}) {
 
   // `getPoint` is evaluated only after world matrices are refreshed —
   // a precomputed point can be measured against stale matrices.
-  function pivotAt(node, getPoint) {
-    const parent = node.parent;
+  function pivotAt(node: THREE.Object3D, getPoint: () => THREE.Vector3): THREE.Group {
+    const parent = node.parent!;
     parent.updateWorldMatrix(true, true);
     const point = getPoint();
     const pivot = new THREE.Group();
@@ -261,8 +277,8 @@ export function createBrandbot(container, options = {}) {
   // Pivot whose local Y axis is aligned to a world-space direction, so
   // rotation.y twists `node` axially (e.g. forearm pronation). Outer group
   // carries the alignment; the returned inner group is safe to animate.
-  function axialPivotAt(node, getPoint, getAxis) {
-    const parent = node.parent;
+  function axialPivotAt(node: THREE.Object3D, getPoint: () => THREE.Vector3, getAxis: () => THREE.Vector3): THREE.Group {
+    const parent = node.parent!;
     parent.updateWorldMatrix(true, true);
     const point = getPoint();
     const axis = getAxis();
@@ -280,15 +296,15 @@ export function createBrandbot(container, options = {}) {
     return pivot;
   }
 
-  const bboxOf = n => new THREE.Box3().setFromObject(n);
-  const centerOf = n => bboxOf(n).getCenter(new THREE.Vector3());
-  const topOf = n => { const b = bboxOf(n); return new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2); };
-  const bottomOf = n => { const b = bboxOf(n); return new THREE.Vector3((b.min.x + b.max.x) / 2, b.min.y, (b.min.z + b.max.z) / 2); };
+  const bboxOf = (n: THREE.Object3D) => new THREE.Box3().setFromObject(n);
+  const centerOf = (n: THREE.Object3D) => bboxOf(n).getCenter(new THREE.Vector3());
+  const topOf = (n: THREE.Object3D) => { const b = bboxOf(n); return new THREE.Vector3((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2); };
+  const bottomOf = (n: THREE.Object3D) => { const b = bboxOf(n); return new THREE.Vector3((b.min.x + b.max.x) / 2, b.min.y, (b.min.z + b.max.z) / 2); };
 
   // One arm is a mirrored instance, which flips the sense of some rotations;
   // probe each axis once and store the sign that moves the hand as intended.
-  function calibrateRig(rig) {
-    const center = (setup) => {
+  function calibrateRig(rig: Rig): void {
+    const center = (setup?: () => void) => {
       rig.shoulder.rotation.set(0, 0, 0);
       if (rig.elbow) rig.elbow.rotation.set(0, 0, 0);
       if (setup) setup();
@@ -305,19 +321,19 @@ export function createBrandbot(container, options = {}) {
     const raise = center(() => { rig.shoulder.rotation.x = -0.4; });
     rig.raiseSign = (raise.z - base.z) + (raise.y - base.y) > 0 ? -1 : 1;
     if (rig.elbow) {
-      const bend = center(() => { rig.elbow.rotation.x = -0.6; });
+      const bend = center(() => { rig.elbow!.rotation.x = -0.6; });
       rig.bendSign = (bend.z - base.z) + (bend.y - base.y) > 0 ? -1 : 1;
-      const bent = center(() => { rig.elbow.rotation.x = rig.bendSign * 0.9; });
-      const splay = center(() => { rig.elbow.rotation.x = rig.bendSign * 0.9; rig.elbow.rotation.y = 0.4; });
+      const bent = center(() => { rig.elbow!.rotation.x = rig.bendSign * 0.9; });
+      const splay = center(() => { rig.elbow!.rotation.x = rig.bendSign * 0.9; rig.elbow!.rotation.y = 0.4; });
       rig.splaySign = (splay.x - bent.x) * rig.side > 0 ? 1 : -1;
     }
   }
 
-  function setupModel(gltf) {
+  function setupModel(gltf: GLTF): void {
     const bot = gltf.scene.getObjectByName('Bot') || gltf.scene;
 
-    const junk = [];
-    gltf.scene.traverse(o => { if (o.isLight || o.isCamera) junk.push(o); });
+    const junk: THREE.Object3D[] = [];
+    gltf.scene.traverse(o => { if ((o as THREE.Light).isLight || (o as THREE.Camera).isCamera) junk.push(o); });
     junk.forEach(o => o.removeFromParent());
 
     let box = new THREE.Box3().setFromObject(bot);
@@ -330,61 +346,66 @@ export function createBrandbot(container, options = {}) {
     bot.position.y -= box.min.y;
 
     bot.traverse(o => {
-      if (!o.isMesh) return;
-      o.castShadow = true;
-      o.material = /Cylinder|Cube/.test(o.name) ? materials.joint : materials.primaryPlain;
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.castShadow = true;
+      m.material = /Cylinder|Cube/.test(m.name) ? materials.joint : materials.primaryPlain;
     });
-    const headMesh = bot.getObjectByName('Head_2');   // loader swaps spaces for underscores
+    const headMesh = bot.getObjectByName('Head_2') as THREE.Mesh | undefined;   // loader swaps spaces for underscores
     if (headMesh) headMesh.material = materials.visor;
-    const bodyMesh = bot.getObjectByName('Body');
+    const bodyMesh = bot.getObjectByName('Body') as THREE.Mesh | undefined;
     if (bodyMesh) { boxUV(bodyMesh.geometry, 0.035); bodyMesh.material = materials.primary; }
 
     const headNode = bot.getObjectByName('Head') || headMesh;
-    headPivot = pivotAt(headNode, () => centerOf(headNode));
+    if (headNode) headPivot = pivotAt(headNode, () => centerOf(headNode));
 
     const topPart = bot.getObjectByName('Top_part');
     if (topPart) waistPivot = pivotAt(topPart, () => bottomOf(topPart));
 
-    bottomNode = bot.getObjectByName('Bottom');           // legs + pelvis
+    bottomNode = bot.getObjectByName('Bottom') || null;           // legs + pelvis
     if (bottomNode) bottomNode.visible = state.legs;
 
     // two arm assemblies; the loader dedupes the second's names with suffixes
-    const armRoots = [];
+    const armRoots: THREE.Object3D[] = [];
     bot.traverse(o => { if (/^Hand_LEFT(_\d+)?$/.test(o.name)) armRoots.push(o); });
     armRoots.forEach(root => {
-      let arm, forearm, elbowNode;
+      let arm: THREE.Object3D | undefined, forearm: THREE.Object3D | undefined, elbowNode: THREE.Object3D | undefined;
       root.traverse(o => {
         if (!arm && /^arm(_\d+)?$/.test(o.name)) arm = o;
         if (!forearm && /^forearm(_\d+)?$/.test(o.name)) forearm = o;
         if (!elbowNode && /^elbow(_\d+)?$/.test(o.name)) elbowNode = o;
       });
       if (!arm) return;
-      let shoulderJoint = null;
+      let shoulderJoint: THREE.Object3D | null = null;
       arm.traverse(o => { if (!shoulderJoint && /^Cube_2(_\d+)?$/.test(o.name)) shoulderJoint = o; });
       const elbowRing = elbowNode && elbowNode.children.find(ch => /^Group(_\d+)?$/.test(ch.name));
-      const shoulder = pivotAt(arm, () => shoulderJoint ? centerOf(shoulderJoint) : topOf(arm));
-      const elbow = forearm ? pivotAt(forearm, () => elbowRing ? centerOf(elbowRing) : topOf(forearm)) : null;
+      const armNode = arm;
+      const shoulder = pivotAt(armNode, () => shoulderJoint ? centerOf(shoulderJoint) : topOf(armNode));
+      const forearmNode = forearm;
+      const elbow = forearmNode ? pivotAt(forearmNode, () => elbowRing ? centerOf(elbowRing) : topOf(forearmNode)) : null;
       const side = Math.sign(shoulder.getWorldPosition(new THREE.Vector3()).x) || 1;
       // pronation pivot: twist the whole forearm (hand included) around its
       // own long axis — palm rotation with nothing to detach
-      let handMesh = null;
-      (forearm || root).traverse(o => { if (!handMesh && o.isMesh && /^Hand(_\d+)?$/.test(o.name)) handMesh = o; });
-      let twist = null;
-      if (forearm && handMesh) {
-        const elbowPoint = () => elbowRing ? centerOf(elbowRing) : topOf(forearm);
-        twist = axialPivotAt(forearm, elbowPoint,
-          () => centerOf(handMesh).sub(elbowPoint()).normalize());
+      let handMesh: THREE.Object3D | null = null;
+      (forearmNode || root).traverse(o => { if (!handMesh && (o as THREE.Mesh).isMesh && /^Hand(_\d+)?$/.test(o.name)) handMesh = o; });
+      let twist: THREE.Group | null = null;
+      if (forearmNode && handMesh) {
+        const hand = handMesh as THREE.Object3D;
+        const elbowPoint = () => elbowRing ? centerOf(elbowRing) : topOf(forearmNode);
+        twist = axialPivotAt(forearmNode, elbowPoint,
+          () => centerOf(hand).sub(elbowPoint()).normalize());
       }
-      const rig = { shoulder, elbow, twist, handRef: forearm || arm, side, raiseSign: -1, outSign: 1, bendSign: -1, splaySign: 1 };
+      const rig: Rig = { shoulder, elbow, twist, handRef: forearmNode || armNode, side, raiseSign: -1, outSign: 1, bendSign: -1, splaySign: 1 };
       calibrateRig(rig);
       armRigs.push(rig);
 
       root.traverse(o => {
-        if (!o.isMesh) return;
-        if (/^Hand(_\d+)?$/.test(o.name)) { o.material = materials.chrome; return; }
-        if (/^(Rectangle_3|Ellipse_3)(_\d+)?$/.test(o.name)) { o.material = materials.joint; return; }
-        boxUV(o.geometry, 0.045);
-        o.material = materials.carbon;
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        if (/^Hand(_\d+)?$/.test(m.name)) { m.material = materials.chrome; return; }
+        if (/^(Rectangle_3|Ellipse_3)(_\d+)?$/.test(m.name)) { m.material = materials.joint; return; }
+        boxUV(m.geometry, 0.045);
+        m.material = materials.carbon;
       });
     });
 
@@ -407,13 +428,13 @@ export function createBrandbot(container, options = {}) {
   }
 
   const loader = new GLTFLoader();
-  if (opts.gltf) loader.parse(JSON.stringify(opts.gltf), '', setupModel, err => console.error('BrandBot: parse failed', err));
-  else if (opts.modelUrl) loader.load(opts.modelUrl, setupModel, undefined, err => console.error('BrandBot: load failed', err));
+  if (opts.gltf) loader.parse(JSON.stringify(opts.gltf), '', setupModel, (err: unknown) => console.error('BrandBot: parse failed', err));
+  else if (opts.modelUrl) loader.load(opts.modelUrl, setupModel, undefined, (err: unknown) => console.error('BrandBot: load failed', err));
   else console.error('BrandBot: pass `gltf` (JSON) or `modelUrl` in options');
 
   /* -------------------------------------------------------------- pointer */
   const pointer = { x: 0, y: 0, active: false, last: 0 };
-  function onPointerMove(e) {
+  function onPointerMove(e: PointerEvent): void {
     if (opts.trackPointer === 'element') {
       const r = container.getBoundingClientRect();
       pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
@@ -425,10 +446,10 @@ export function createBrandbot(container, options = {}) {
     pointer.active = true;
     pointer.last = Date.now();
   }
-  function onLeave() { pointer.active = false; }
-  const pointerTarget = opts.trackPointer === 'element' ? container : window;
+  function onLeave(): void { pointer.active = false; }
+  const pointerTarget: Window | HTMLElement = opts.trackPointer === 'element' ? container : window;
   if (opts.trackPointer) {
-    pointerTarget.addEventListener('pointermove', onPointerMove);
+    pointerTarget.addEventListener('pointermove', onPointerMove as EventListener);
     document.addEventListener('mouseleave', onLeave);
   }
 
@@ -455,10 +476,10 @@ export function createBrandbot(container, options = {}) {
   let waistFollow = 0, leanFollow = 0;
   const blink = { active: false, t0: 0, next: 3.5 };
   const spinState = { active: false, t: 0, dur: 1.1 };
-  const easeInOut = x => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
+  const easeInOut = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
   let raf = 0, disposed = false;
 
-  function tick() {
+  function tick(): void {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
     const dt = clock.getDelta();
@@ -482,7 +503,7 @@ export function createBrandbot(container, options = {}) {
     if (headPivot) {
       // aim relative to the head's own screen position: cursor on the face
       // means looking straight ahead. Near-instant, jitter-smoothed only.
-      let lookY, lookX;
+      let lookY: number, lookX: number;
       if (pointer.active) {
         headPivot.getWorldPosition(_headNdc).project(camera);
         const hx = _headNdc.x, hy = -_headNdc.y;
@@ -519,7 +540,7 @@ export function createBrandbot(container, options = {}) {
     const headPitch = headPitchNow;
     for (const rig of armRigs) {
       const g = gesture.cur;
-      const d = (cur, target) => THREE.MathUtils.damp(cur, target, 1.2, dt);
+      const d = (cur: number, target: number) => THREE.MathUtils.damp(cur, target, 1.2, dt);
       rig.shoulder.rotation.x = d(rig.shoulder.rotation.x, rig.raiseSign * (g.raise + swayRaise + headPitch * 0.22));
       rig.shoulder.rotation.y = d(rig.shoulder.rotation.y, 0);
       rig.shoulder.rotation.z = d(rig.shoulder.rotation.z, rig.outSign * (g.out + swayOut));
@@ -562,7 +583,7 @@ export function createBrandbot(container, options = {}) {
   }
 
   /* --------------------------------------------------------------- sizing */
-  function resize() {
+  function resize(): void {
     const w = container.clientWidth || 1, h = container.clientHeight || 1;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -575,7 +596,7 @@ export function createBrandbot(container, options = {}) {
   /* ------------------------------------------------------------------ API */
   const state = { logoText: opts.logoText, logoColor: opts.logoColor, legs: opts.legs !== false };
 
-  function set(o = {}) {
+  function set(o: BrandbotUpdate = {}): BrandbotInstance {
     if ('legs' in o && o.legs !== undefined) {
       state.legs = !!o.legs;
       if (bottomNode) bottomNode.visible = state.legs;
@@ -600,13 +621,13 @@ export function createBrandbot(container, options = {}) {
     return api;
   }
 
-  function dispose() {
+  function dispose(): void {
     disposed = true;
     cancelAnimationFrame(raf);
     observer.disconnect();
     if (controls) controls.dispose();
     if (opts.trackPointer) {
-      pointerTarget.removeEventListener('pointermove', onPointerMove);
+      pointerTarget.removeEventListener('pointermove', onPointerMove as EventListener);
       document.removeEventListener('mouseleave', onLeave);
     }
     renderer.dispose();
@@ -614,7 +635,7 @@ export function createBrandbot(container, options = {}) {
     renderer.domElement.remove();
   }
 
-  const api = {
+  const api: BrandbotInstance = {
     set,
     spin: () => { spinState.active = true; spinState.t = 0; },
     replay: () => { introState.active = true; introState.t = 0; if (controls) controls.enabled = false; },
