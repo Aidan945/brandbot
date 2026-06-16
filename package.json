@@ -1,0 +1,27 @@
+{
+  "name": "brandbot",
+  "version": "0.1.0",
+  "description": "A 3D robot mascot you brand with your own logo and colors — drop-in React component, cursor tracking, no Spline runtime.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./core": "./src/robot-core.js",
+    "./model": "./src/nexbot-model.js"
+  },
+  "files": ["src", "README.md", "LICENSE", "preview.png"],
+  "sideEffects": false,
+  "homepage": "https://aidan945.github.io/brandbot/demo/",
+  "repository": { "type": "git", "url": "https://github.com/Aidan945/brandbot.git" },
+  "bugs": { "url": "https://github.com/Aidan945/brandbot/issues" },
+  "author": "Aidan Zarski",
+  "peerDependencies": {
+    "react": ">=17",
+    "three": ">=0.150.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true }
+  },
+  "keywords": ["robot", "mascot", "3d", "threejs", "react", "hero", "brand", "logo", "cursor", "spline"],
+  "license": "MIT"
+}

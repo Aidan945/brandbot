@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configure · BrandBot</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif; color: #e7e7ea;
+    background:
+      radial-gradient(1100px 600px at 78% -12%, rgba(99,102,241,.18), transparent 60%),
+      radial-gradient(900px 520px at 6% 112%, rgba(56,189,248,.12), transparent 60%),
+      linear-gradient(180deg, #0b0b12, #08080d);
+    background-attachment: fixed;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+  .brand { font-weight: 800; letter-spacing: .04em; display: flex; gap: 9px; align-items: center; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: #7dd3fc; box-shadow: 0 0 14px #7dd3fc; }
+  nav .links { display: flex; gap: 22px; font-size: 14px; }
+  nav a { color: #a8a8b3; text-decoration: none; } nav a:hover, nav a.active { color: #fafafa; }
+
+  .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 22px; align-items: start; }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+
+  .stage { position: relative; height: 560px; border-radius: 20px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08);
+    background: radial-gradient(120% 90% at 50% 0%, rgba(125,211,252,.07), transparent 55%), #07070b;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05); }
+  .stage > div { position: absolute; inset: 0; }
+  .stage .row2 { position: absolute; right: 12px; top: 12px; z-index: 2; display: flex; gap: 8px; }
+  .stage .row2 button { font-size: 12px; padding: 6px 11px; border-radius: 9px; border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.4); color: #e7e7ea; cursor: pointer; backdrop-filter: blur(8px); }
+  .stage .hint { position: absolute; left: 14px; bottom: 12px; font-size: 11.5px; color: #6b6b78; }
+
+  .side { display: flex; flex-direction: column; gap: 18px; }
+  .card { background: #101017; border: 1px solid #21212b; border-radius: 16px; padding: 20px; }
+  .card h2 { margin: 0 0 12px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #71717a; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 9px 0; font-size: 13.5px; color: #d4d4dc; }
+  input[type=color] { width: 44px; height: 28px; border: 1px solid #3a3a44; border-radius: 7px; padding: 1px; background: #18181f; cursor: pointer; }
+  input[type=text] { flex: 1; max-width: 190px; font-size: 13px; padding: 7px 10px; border: 1px solid #3a3a44; border-radius: 8px; background: #18181f; color: #fafafa; outline: none; }
+  input[type=text]:focus { border-color: #6b8afd; }
+  .toggle { appearance: none; width: 40px; height: 22px; border-radius: 99px; background: #3a3a44; position: relative; cursor: pointer; transition: background .15s; }
+  .toggle:checked { background: #6b8afd; }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fafafa; transition: left .15s; }
+  .toggle:checked::after { left: 20px; }
+  .btn { font-size: 13px; padding: 8px 13px; border-radius: 9px; border: 1px solid #3a3a44; background: #18181f; color: #fafafa; cursor: pointer; }
+  .btn:hover { background: #23232c; } .btn.primary { background: #fafafa; color: #0a0a0f; border-color: #fafafa; font-weight: 600; }
+  .filebtn input { display: none; }
+
+  .code { position: relative; background: #0a0a10; border: 1px solid #21212b; border-radius: 14px; padding: 18px;
+    font: 12.5px/1.65 ui-monospace, "SF Mono", Menlo, monospace; color: #d4d4dc; white-space: pre; overflow-x: auto; min-height: 200px; }
+  .code .copy { position: absolute; top: 10px; right: 10px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "htm": "https://esm.sh/htm@3.1.1"
+  }
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="brand"><span class="dot"></span> BrandBot</div>
+    <div class="links">
+      <a href="./index.html">Showcase</a>
+      <a href="./configure.html" class="active">Configure</a>
+      <a href="https://github.com/Aidan945/brandbot" target="_blank">GitHub</a>
+    </div>
+  </nav>
+  <div id="root"></div>
+</div>
+
+<script type="module">
+import { createElement, useRef, useState, useMemo } from 'react';
+import { createRoot } from 'react-dom/client';
+import htm from 'htm';
+import { BrandBot } from '../src/index.js';
+const html = htm.bind(createElement);
+
+const DEFAULTS = {
+  primary: '#17171c', accent: '#08080a', visor: '#b0b0b8', hands: '#77777e',
+  eyes: '#e9f4ff', logoColor: '#ffffff', logoText: 'BrandBot', legs: true,
+};
+
+function codeFor(s, logoImage) {
+  const p = [];
+  if (s.primary !== DEFAULTS.primary)     p.push(['primary', s.primary]);
+  if (s.accent !== DEFAULTS.accent)       p.push(['accent', s.accent]);
+  if (s.visor !== DEFAULTS.visor)         p.push(['visor', s.visor]);
+  if (s.hands !== DEFAULTS.hands)         p.push(['hands', s.hands]);
+  if (s.eyes !== DEFAULTS.eyes)           p.push(['eyes', s.eyes]);
+  if (logoImage)                          p.push(['logoImage', logoImage]);
+  else {
+    if (s.logoText !== DEFAULTS.logoText)   p.push(['logoText', s.logoText]);
+    if (s.logoColor !== DEFAULTS.logoColor) p.push(['logoColor', s.logoColor]);
+  }
+  if (!s.legs)                            p.push(['legs', false]);
+  const lines = p.map(([k, v]) => typeof v === 'string' ? `  ${k}="${v}"` : `  ${k}={${v}}`);
+  return [
+    `import { BrandBot } from 'brandbot';`, ``,
+    `<div style={{ height: 560 }}>`,
+    p.length ? `  <BrandBot\n  ${lines.join('\n  ')}\n  />` : `  <BrandBot />`,
+    `</div>`,
+  ].join('\n');
+}
+
+// uploaded files → self-contained base64 data URI (downscaled to 512px);
+// pasted URLs are used as-is
+function fileToDataURL(file, max = 512) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+const shortenDataUris = code =>
+  code.replace(/(data:image\/[a-z+]+;base64,)[A-Za-z0-9+/=]{32,}/g,
+    (m, pre) => `${pre}…full base64 on copy (${Math.round(m.length / 1024)} KB)…`);
+
+function App() {
+  const [s, setS] = useState(DEFAULTS);
+  const [logoImage, setLogoImage] = useState(null);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const bot = useRef(null);
+  const up = patch => setS(prev => ({ ...prev, ...patch }));
+  const code = useMemo(() => codeFor(s, logoImage), [s, logoImage]);
+
+  const color = (label, key) => html`
+    <div class="row"><span>${label}</span>
+      <input type="color" value=${s[key]} onInput=${e => up({ [key]: e.target.value })} /></div>`;
+
+  return html`
+    <div class="grid">
+      <div class="stage">
+        <div>
+          <${BrandBot} ref=${bot}
+            primary=${s.primary} accent=${s.accent} visor=${s.visor} hands=${s.hands}
+            eyes=${s.eyes} logoText=${s.logoText} logoColor=${s.logoColor}
+            logoImage=${logoImage} legs=${s.legs} trackPointer="window" />
+        </div>
+        <div class="row2">
+          <button onClick=${() => bot.current?.replay()}>↺ Intro</button>
+          <button onClick=${() => bot.current?.spin()}>Spin 🤖</button>
+        </div>
+        <span class="hint">exactly how it ships — faces forward, follows your cursor</span>
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <h2>Customize</h2>
+          ${color('Body', 'primary')}
+          ${color('Joints', 'accent')}
+          ${color('Face plate', 'visor')}
+          ${color('Hands', 'hands')}
+          ${color('Eyes', 'eyes')}
+          ${color('Logo color', 'logoColor')}
+          <div class="row"><span>Logo text</span>
+            <input type="text" value=${s.logoText} placeholder="YOUR BRAND"
+              onInput=${e => { setLogoImage(null); setLogoUrl(''); up({ logoText: e.target.value }); }} /></div>
+          <div class="row"><span>Logo image</span>
+            <label class="btn filebtn">Upload
+              <input type="file" accept="image/*" onChange=${async e => {
+                const f = e.target.files[0]; if (f) { setLogoUrl(''); setLogoImage(await fileToDataURL(f)); }
+              }} /></label></div>
+          <div class="row"><span>…or image URL</span>
+            <input type="text" value=${logoUrl} placeholder="https://…/logo.png"
+              onInput=${e => { setLogoUrl(e.target.value); setLogoImage(e.target.value.trim() || null); }} /></div>
+          <div class="row"><span>Legs</span>
+            <input type="checkbox" class="toggle" checked=${s.legs} onChange=${e => up({ legs: e.target.checked })} /></div>
+        </div>
+
+        <div class="card">
+          <h2>Your code</h2>
+          <div class="code">
+            <button class="btn primary copy" onClick=${async () => {
+              await navigator.clipboard.writeText(code);
+              setCopied(true); setTimeout(() => setCopied(false), 1500);
+            }}>${copied ? 'Copied ✓' : 'Copy code'}</button>
+            ${shortenDataUris(code)}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+createRoot(document.getElementById('root')).render(html`<${App} />`);
+</script>
+</body>
+</html>
