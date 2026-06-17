@@ -548,7 +548,8 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
       waistFollow = THREE.MathUtils.damp(waistFollow, pointer.active ? px * 0.025 : 0, 14, dt);
       waistPivot.rotation.y = waistFollow + Math.sin(t * 0.45) * 0.018 + Math.sin(t * 0.21 + 1.3) * 0.01;
       waistPivot.rotation.z = Math.sin(t * 0.6 + 0.7) * 0.008;
-      waistPivot.rotation.x = Math.sin(t * 1.6) * 0.008 + headPitchNow * 0.12;
+      // no breathing pitch (that read as a vertical bob); only follow the gaze
+      waistPivot.rotation.x = headPitchNow * 0.12;
     }
 
     gesture.t -= dt;

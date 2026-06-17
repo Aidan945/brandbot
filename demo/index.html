@@ -66,21 +66,24 @@
   .npm button { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; font-weight: 700; }
 
   /* ---- robot stage: fills the hero, legs run off the bottom of the screen ---- */
-  .hero-robot { position: relative; align-self: stretch; overflow: hidden; }
-  /* solid legs cut cleanly at the bottom edge of the screen — no fade, so there's
-     no washed-out band on the light background. Scaled up and nudged down so the
-     cut lands around the shin, responsive */
+  .hero-robot {
+    position: relative; align-self: stretch; overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 87%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 87%, transparent 100%);
+  }
+  /* scaled up and nudged down so the legs reach the bottom and the soft fade
+     grounds them into the grid — responsive */
   #robot {
     position: absolute; left: 0; right: 0; top: 0; height: 100%;
     transform: scale(1.1) translateY(8.5%); transform-origin: center top;
   }
   @media (max-width: 880px) { .hero-robot { height: 76vh; } #robot { transform: scale(1.06) translateY(6%); } }
-  .robot-controls { display: flex; gap: 20px; margin-top: 18px; }
+  .robot-controls { display: flex; gap: 10px; margin-top: 20px; }
   .ctl {
-    background: none; border: none; padding: 0; cursor: pointer;
-    font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text);
   }
-  .ctl:hover { color: var(--accent); }
+  .ctl:hover { border-color: var(--accent); color: var(--accent); }
 
   /* ---- scroll-down: code ---- */
   .install { padding: 60px 0 100px; }
@@ -133,8 +136,8 @@
         <a class="btn" href="#install">See the code</a>
       </div>
       <div class="robot-controls">
-        <button class="ctl" id="replay">↺ Replay intro</button>
-        <button class="ctl" id="spin">⟳ Spin</button>
+        <button class="ctl" id="replay">Replay intro</button>
+        <button class="ctl" id="spin">Spin</button>
       </div>
     </div>
 
