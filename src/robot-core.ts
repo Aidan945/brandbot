@@ -84,12 +84,14 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
   const camera = new THREE.PerspectiveCamera(opts.camera.fov, 1, 0.1, 100);
   const camTarget = new THREE.Vector3(opts.camera.target[0], opts.camera.target[1], opts.camera.target[2]);
   const camEnd = new THREE.Vector3(opts.camera.position[0], opts.camera.position[1], opts.camera.position[2]);
-  // intro starts CLOSE (robot large) and pulls back to the final framing,
-  // so the robot shrinks from big into place — a "zoom out" entrance
-  const camStart = camEnd.clone().sub(camTarget).multiplyScalar(0.42).add(camTarget);
-  camStart.y += 0.2;
-  camera.position.copy(opts.intro ? camStart : camEnd);
-  camera.lookAt(camTarget);
+  // intro: start zoomed on the FACE, then pull back and down to the full-body
+  // framing. The face shrinks and the head rises toward the top of frame as
+  // the body is revealed below.
+  const introFromPos = new THREE.Vector3(camTarget.x, 4.05, camTarget.z + 1.4);
+  const introFromLook = new THREE.Vector3(camTarget.x, 4.18, camTarget.z);
+  const _introLook = new THREE.Vector3();
+  camera.position.copy(opts.intro ? introFromPos : camEnd);
+  camera.lookAt(opts.intro ? introFromLook : camTarget);
 
   // drag-to-rotate, only when asked (demos). Off by default so the component
   // sits locked in its box and faces forward in real apps.
@@ -105,7 +107,10 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
     controls.maxPolarAngle = 1.75;
     controls.enabled = !opts.intro;   // handed control after the intro dolly
   }
-  const introState = { active: opts.intro, t: 0, dur: 1.5 };
+  // the intro is armed but only *starts* once the model is in (see setupModel),
+  // so the face-zoom plays when the robot is actually visible — not during the
+  // async load when the canvas is still empty
+  const introState = { active: false, t: 0, dur: 1.7 };
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.55));
   const key = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -425,6 +430,9 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
         new THREE.MeshStandardMaterial({ map: logoTexture, transparent: true, roughness: 0.5, metalness: 0.1,
           polygonOffset: true, polygonOffsetFactor: -4, depthWrite: false }));
     }
+
+    // model is in — now play the zoom-in entrance
+    if (opts.intro) { introState.active = true; introState.t = 0; }
   }
 
   const loader = new GLTFLoader();
@@ -479,7 +487,9 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
   function tick(): void {
     if (disposed) return;
     raf = requestAnimationFrame(tick);
-    const dt = clock.getDelta();
+    // clamp dt so a long frame (e.g. the model parse blocking the thread, or a
+    // backgrounded tab) can't jump the intro past its face-zoom in one step
+    const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
     robot.position.y = Math.sin(t * 0.9) * 0.025 + 0.02;   // gentle float
@@ -577,9 +587,10 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
     if (introState.active) {
       introState.t += dt;
       const k = Math.min(introState.t / introState.dur, 1);
-      const e = k * k * (3 - 2 * k);             // smoothstep: holds the large start, then eases out
-      camera.position.lerpVectors(camStart, camEnd, e);
-      camera.lookAt(camTarget);
+      const e = k * k * (3 - 2 * k);             // smoothstep: holds the face, then eases out
+      camera.position.lerpVectors(introFromPos, camEnd, e);
+      _introLook.lerpVectors(introFromLook, camTarget, e);
+      camera.lookAt(_introLook);
       if (k >= 1) { introState.active = false; if (controls) controls.enabled = true; }
     } else if (controls) {
       controls.update();

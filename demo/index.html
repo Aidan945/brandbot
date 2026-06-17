@@ -36,22 +36,18 @@
   .hero {
     display: grid;
     grid-template-columns: minmax(min(300px,100%),0.82fr) minmax(min(420px,100%),1.18fr);
-    gap: clamp(28px, 5vw, 72px); align-items: center; min-height: calc(100dvh - 90px);
+    gap: clamp(28px, 5vw, 72px); align-items: stretch; min-height: calc(100svh - 66px);
   }
   @media (max-width: 880px) { .hero { grid-template-columns: 1fr; min-height: 0; } }
+  .hero-copy { align-self: center; }
   .eyebrow {
     display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 700;
-    letter-spacing: .02em; color: var(--accent); border: 1px solid rgba(45,111,136,.28);
-    background: rgba(45,111,136,.07); padding: 6px 12px; border-radius: 999px;
+    letter-spacing: .02em; color: var(--muted); border: 1px solid var(--border);
+    background: rgba(255,255,255,.6); padding: 6px 12px; border-radius: 999px;
   }
   h1 {
-    margin: 20px 0 0; font-size: clamp(40px, 6.4vw, 76px); line-height: 0.92;
-    letter-spacing: -0.072em; max-width: 12ch;
-  }
-  .accent { position: relative; color: var(--accent); white-space: nowrap; }
-  .accent::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 0.14em;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px; opacity: .5;
+    margin: 20px 0 0; font-size: clamp(40px, 6.4vw, 76px); line-height: 0.95;
+    letter-spacing: -0.05em; max-width: 12ch; font-weight: 800; color: var(--text);
   }
   .sub { max-width: 440px; margin: 18px 0 0; color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.55; }
   .cta { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; align-items: center; }
@@ -69,14 +65,19 @@
   }
   .npm button { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; font-weight: 700; }
 
-  /* ---- robot stage: bottom-anchored, faded feet, tracks cursor ---- */
-  .hero-robot { position: relative; width: 100%; min-height: clamp(440px, min(calc(100dvh - 90px), 60vw), 860px); align-self: end; }
-  #robot {
-    position: absolute; inset: 0;
-    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  /* ---- robot stage: fills the hero, legs run off the bottom of the screen ---- */
+  .hero-robot {
+    position: relative; align-self: stretch; overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
   }
-  .hero-robot .hint { position: absolute; left: 4px; bottom: 8px; font-size: 11.5px; color: #8a93a0; }
+  /* scaled up and nudged down, then cropped at the bottom of the screen, so the
+     robot is cut off around the shin right at the fold — responsive */
+  #robot {
+    position: absolute; left: 0; right: 0; top: 0; height: 100%;
+    transform: scale(1.1) translateY(4%); transform-origin: center top;
+  }
+  @media (max-width: 880px) { .hero-robot { height: 76vh; } #robot { transform: scale(1.06) translateY(3%); } }
   .hero-robot .replay {
     position: absolute; right: 4px; top: 4px; z-index: 2; font-size: 12px; font-weight: 600; padding: 6px 11px;
     border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,.7); color: var(--text);
@@ -124,7 +125,7 @@
   <section class="hero">
     <div class="hero-copy">
       <span class="eyebrow">● Open source · React · TypeScript</span>
-      <h1>A 3D robot for <span class="accent">your brand</span>.</h1>
+      <h1>A 3D robot for your brand.</h1>
       <p class="sub">BrandBot is an open-source 3D mascot you drop into any React app.
         It floats, blinks, and follows the cursor — your logo and colors are just props.
         No Spline runtime.</p>
@@ -138,7 +139,6 @@
     <div class="hero-robot">
       <div id="robot"></div>
       <button class="replay" id="replay">↺ Replay intro</button>
-      <span class="hint">follows your cursor</span>
     </div>
   </section>
 

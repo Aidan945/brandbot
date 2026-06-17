@@ -26,7 +26,21 @@ export function Hero() {
 }
 ```
 
-That's it. The component fills its parent, renders on a transparent background, and starts moving.
+That's it. The component fills its parent, renders on a transparent background, and starts moving. **The default needs no extra CSS** — drop it in a sized box and it looks right.
+
+### Full-bleed hero (optional)
+
+To have the robot rise from the bottom of a full-height hero with its legs fading into the page (like the [demo](https://aidan945.github.io/brandbot/demo/)), wrap it:
+
+```jsx
+<div style={{ height: '100vh', overflow: 'hidden',
+              WebkitMaskImage: 'linear-gradient(180deg,#000 92%,transparent 100%)' }}>
+  <div style={{ position: 'absolute', inset: 0,
+                transform: 'scale(1.1) translateY(4%)', transformOrigin: 'center top' }}>
+    <BrandBot />
+  </div>
+</div>
+```
 
 **By default it stays put** — locked in its box, facing forward, following the cursor. It does *not* let visitors drag-rotate it (rarely what you want in a hero or card). Add `orbit` to enable drag-to-rotate for demos.
 
