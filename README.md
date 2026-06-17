@@ -1,10 +1,14 @@
 # BrandBot 🤖
 
+[![npm](https://img.shields.io/npm/v/brandbot?color=cb3837&logo=npm)](https://www.npmjs.com/package/brandbot)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)](#)
+
 **A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that gestures, blinks, and follows the visitor's cursor. It renders with [Three.js](https://threejs.org), is written in TypeScript with full type declarations, and bundles the model — so there's nothing to configure or host. Works in any React app (see the Next.js note below).
 
 **[▶ Live demo](https://aidan945.github.io/brandbot/demo/)** · **[Configure & copy code](https://aidan945.github.io/brandbot/demo/configure.html)**
 
-![BrandBot](./preview.png)
+![BrandBot](https://raw.githubusercontent.com/Aidan945/brandbot/main/preview.png)
 
 ## Install
 
