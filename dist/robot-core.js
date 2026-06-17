@@ -85,7 +85,7 @@ export function createBrandbot(container, options = {}) {
     // the intro is armed but only *starts* once the model is in (see setupModel),
     // so the face-zoom plays when the robot is actually visible — not during the
     // async load when the canvas is still empty
-    const introState = { active: false, t: 0, dur: 1.9 };
+    const introState = { active: false, t: 0, dur: 2.3 };
     scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.55));
     const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(3.5, 7, 5);
@@ -587,8 +587,8 @@ export function createBrandbot(container, options = {}) {
         if (introState.active) {
             introState.t += dt;
             const k = Math.min(introState.t / introState.dur, 1);
-            // easeInOutQuart: lingers on the face, accelerates, then settles
-            const e = k < 0.5 ? 8 * k * k * k * k : 1 - Math.pow(-2 * k + 2, 4) / 2;
+            // easeInOutQuint: a long, slow hold on the face, then accelerates and settles
+            const e = k < 0.5 ? 16 * k ** 5 : 1 - Math.pow(-2 * k + 2, 5) / 2;
             camera.position.lerpVectors(introFromPos, camEnd, e);
             _introLook.lerpVectors(introFromLook, camTarget, e);
             camera.lookAt(_introLook);
