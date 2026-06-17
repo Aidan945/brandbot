@@ -469,7 +469,7 @@ export function createBrandbot(container, options = {}) {
     }
     const clock = new THREE.Clock();
     const _headNdc = new THREE.Vector3();
-    let waistFollow = 0, leanFollow = 0;
+    let waistFollow = 0;
     const blink = { active: false, t0: 0, next: 3.5 };
     const spinState = { active: false, t: 0, dur: 1.1 };
     const easeInOut = (x) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
@@ -581,8 +581,9 @@ export function createBrandbot(container, options = {}) {
             }
         }
         else {
-            leanFollow = THREE.MathUtils.damp(leanFollow, pointer.active ? px * 0.022 : 0, 14, dt);
-            robot.rotation.y = leanFollow + (pointer.active ? 0 : Math.sin(t * 0.4) * 0.02);
+            // base + legs fully static — no whole-body lean or sway. The upper body
+            // follows the cursor via the waist pivot instead, so the legs never move.
+            robot.rotation.y = 0;
         }
         // one-time zoom-in entrance; hands control to OrbitControls when finished
         if (introState.active) {

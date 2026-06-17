@@ -68,8 +68,11 @@
   .codecard { background: #0c1320; border: 1px solid #1b2638; border-radius: 16px; overflow: hidden; }
   .codecard .chead { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1b2638; }
   .codecard .chead span { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #7e8aa0; }
-  .codecard .copy { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 8px; border: 1px solid #2a3850; background: #11192a; color: #cfe0f5; cursor: pointer; }
+  .codecard .cbtns { display: flex; gap: 8px; }
+  .codecard .copy { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 8px; border: 1px solid #2a3850; background: #11192a; color: #cfe0f5; cursor: pointer; white-space: nowrap; }
   .codecard .copy:hover { background: #18223a; }
+  .codecard .copy.accent { background: #1d4a63; border-color: #2d6f88; color: #e6f3fb; }
+  .codecard .copy.accent:hover { background: #235a78; }
   .code { font: 12.5px/1.6 ui-monospace, "SF Mono", Menlo, monospace; color: #d6e2f2; white-space: pre; overflow-x: auto; padding: 16px; min-height: 120px; }
 </style>
 <script type="importmap">
@@ -152,11 +155,60 @@ const shortenDataUris = code =>
   code.replace(/(data:image\/[a-z+]+;base64,)[A-Za-z0-9+/=]{32,}/g,
     (m, pre) => `${pre}…full base64 on copy (${Math.round(m.length / 1024)} KB)…`);
 
+// A self-contained brief an AI coding agent (or a developer) can paste and act
+// on: what the component is, how to install/use it, the full API, the chosen
+// config, integration notes, and a closing task that defers placement to you.
+function promptFor(s, logoImage) {
+  return `I want to add **BrandBot** to my app — an open-source 3D robot mascot. It's a drop-in React component (TypeScript, built on Three.js) that renders an interactive 3D robot: it stays locked in place facing forward, follows the visitor's cursor with its head, blinks, and gestures. Every color and the chest logo are props, and the 3D model is bundled in the package, so there's nothing else to host.
+
+## Install
+\`\`\`bash
+npm install brandbot three react
+\`\`\`
+
+## Usage
+The component fills its parent, so always give it a sized box. This is the exact configuration I want:
+\`\`\`jsx
+${codeFor(s, logoImage)}
+\`\`\`
+
+## Next.js / SSR
+WebGL can't be server-rendered — load it client-side only:
+\`\`\`jsx
+import dynamic from 'next/dynamic';
+const BrandBot = dynamic(() => import('brandbot').then(m => m.BrandBot), { ssr: false });
+\`\`\`
+
+## Props (all optional)
+- \`primary\`, \`accent\`, \`visor\`, \`hands\`, \`eyes\`, \`logoColor\` — CSS color strings
+- \`logoText\` — chest text logo (1–3 words); \`logoImage\` — URL/data-URI image logo (overrides text)
+- \`legs\` (bool, false = upper body only) · \`orbit\` (bool, drag-to-rotate, default false = locked) · \`intro\` (bool, zoom-in on load, default true)
+- \`trackPointer\` ('window' | 'element' | false) · \`shadow\` (bool) · \`className\`, \`style\`
+- Imperative ref: \`ref.current.spin()\` (one 360° turn), \`ref.current.replay()\` (replay the intro)
+All color/logo/legs props are live — update them via state and the robot changes instantly.
+
+## Optional: full-bleed hero (robot rises from the bottom of the section)
+\`\`\`jsx
+<div style={{ height: '100vh', overflow: 'hidden', WebkitMaskImage: 'linear-gradient(180deg,#000 88%,transparent 100%)' }}>
+  <div style={{ position: 'absolute', inset: 0, transform: 'scale(1.1) translateY(8%)', transformOrigin: 'center top' }}>
+    <BrandBot /* ...props... *//>
+  </div>
+</div>
+\`\`\`
+
+## License
+Component code is MIT. The bundled NEXBOT model is a Spline Community asset under CC0 1.0 (public domain) — free to use commercially, no attribution required.
+
+## Your task
+Add BrandBot to my app with the configuration above. First ask me which page/section it should go in and at what size, then implement it (rendering client-side), and confirm it builds and displays.`;
+}
+
 function App() {
   const [s, setS] = useState(DEFAULTS);
   const [logoImage, setLogoImage] = useState(null);
   const [logoUrl, setLogoUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const bot = useRef(null);
   const up = patch => setS(prev => ({ ...prev, ...patch }));
   const code = useMemo(() => codeFor(s, logoImage), [s, logoImage]);
@@ -174,7 +226,6 @@ function App() {
             eyes=${s.eyes} logoText=${s.logoText} logoColor=${s.logoColor}
             logoImage=${logoImage} legs=${s.legs} trackPointer="window" />
         </div></div>
-        <span class="hint">exactly how it ships — faces forward, follows your cursor</span>
       </div>
 
       <div class="side">
@@ -207,10 +258,16 @@ function App() {
 
         <div class="codecard">
           <div class="chead"><span>Your code</span>
-            <button class="copy" onClick=${async () => {
-              await navigator.clipboard.writeText(code);
-              setCopied(true); setTimeout(() => setCopied(false), 1500);
-            }}>${copied ? 'Copied ✓' : 'Copy code'}</button>
+            <div class="cbtns">
+              <button class="copy accent" onClick=${async () => {
+                await navigator.clipboard.writeText(promptFor(s, logoImage));
+                setCopiedPrompt(true); setTimeout(() => setCopiedPrompt(false), 1500);
+              }}>${copiedPrompt ? 'Copied ✓' : 'Copy prompt for agent'}</button>
+              <button class="copy" onClick=${async () => {
+                await navigator.clipboard.writeText(code);
+                setCopied(true); setTimeout(() => setCopied(false), 1500);
+              }}>${copied ? 'Copied ✓' : 'Copy code'}</button>
+            </div>
           </div>
           <div class="code">${shortenDataUris(code)}</div>
         </div>
