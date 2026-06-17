@@ -3,72 +3,100 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BrandBot — an open-source 3D robot for your website</title>
+<title>BrandBot — a 3D robot mascot for your brand</title>
 <style>
-  :root { color-scheme: dark; }
+  :root {
+    --bg: #f8fafb; --text: #181b22; --muted: #414b59; --accent: #2d6f88; --accent-2: #3b88a6;
+    --border: rgba(31, 38, 48, 0.16); --panel: #ffffff;
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; min-height: 100%; }
+  html { scroll-behavior: smooth; }
   body {
-    font-family: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif;
-    color: #e7e7ea;
+    margin: 0; color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     background:
-      radial-gradient(1200px 620px at 72% -12%, rgba(99,102,241,.20), transparent 60%),
-      radial-gradient(900px 520px at 8% 112%, rgba(56,189,248,.13), transparent 60%),
-      linear-gradient(180deg, #0b0b12, #08080d);
-    background-attachment: fixed;
+      radial-gradient(circle 820px at 96% 160px, rgba(59, 130, 160, 0.22), transparent 58%),
+      radial-gradient(circle 560px at 12% 84%, rgba(184, 95, 112, 0.12), transparent 62%),
+      linear-gradient(to right, rgba(16, 24, 40, 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(16, 24, 40, 0.05) 1px, transparent 1px),
+      var(--bg);
+    background-size: auto, auto, 6rem 4rem, 6rem 4rem, auto;
+    background-attachment: fixed, fixed, fixed, fixed, scroll;
   }
-  body::before {
-    content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .5;
-    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(1000px 700px at 50% 30%, #000 30%, transparent 80%);
-  }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  .wrap { width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
 
   nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
-  .brand { font-weight: 800; letter-spacing: .04em; display: flex; gap: 9px; align-items: center; }
-  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: #7dd3fc; box-shadow: 0 0 14px #7dd3fc; }
-  nav .links { display: flex; gap: 22px; align-items: center; font-size: 14px; }
-  nav a { color: #a8a8b3; text-decoration: none; }
-  nav a:hover, nav a.active { color: #fafafa; }
+  .brand { font-weight: 800; letter-spacing: -0.02em; font-size: 17px; display: flex; gap: 9px; align-items: center; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px rgba(45,111,136,.6); }
+  nav .links { display: flex; gap: 24px; align-items: center; font-size: 14px; }
+  nav a { color: var(--muted); text-decoration: none; font-weight: 600; }
+  nav a:hover, nav a.active { color: var(--text); }
 
-  .hero { display: grid; grid-template-columns: 1fr 1.05fr; gap: 36px; align-items: center; padding: 26px 0 12px; }
-  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; } }
-  .tag { display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; color: #a5b4fc;
-    border: 1px solid rgba(165,180,252,.25); background: rgba(99,102,241,.10); padding: 5px 11px; border-radius: 99px; }
-  h1 { font-size: 46px; line-height: 1.06; margin: 18px 0 0; font-weight: 800;
-    background: linear-gradient(180deg, #ffffff, #9aa0ad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .sub { color: #a8a8b3; font-size: 16px; line-height: 1.6; margin: 16px 0 0; max-width: 460px; }
-  .cta { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-  .btn { font-size: 14px; font-weight: 600; padding: 11px 18px; border-radius: 11px; border: 1px solid #2a2a33;
-    background: #14141b; color: #fafafa; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-  .btn:hover { background: #1c1c25; }
-  .btn.primary { background: #fafafa; color: #0a0a0f; border-color: #fafafa; }
-  .npm { margin-top: 18px; font: 13px ui-monospace, "SF Mono", Menlo, monospace; color: #c4c4cf;
-    background: #0e0e15; border: 1px solid #23232c; border-radius: 10px; padding: 11px 14px; display: flex; justify-content: space-between; align-items: center; }
-  .npm button { background: none; border: none; color: #7dd3fc; cursor: pointer; font: inherit; }
-
-  .stage {
-    position: relative; height: 540px; border-radius: 20px; overflow: hidden;
-    border: 1px solid rgba(255,255,255,.08);
-    background: radial-gradient(120% 90% at 50% 0%, rgba(125,211,252,.08), transparent 55%), #07070b;
-    box-shadow: 0 30px 80px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+  /* ---- hero ---- */
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(min(300px,100%),0.82fr) minmax(min(420px,100%),1.18fr);
+    gap: clamp(28px, 5vw, 72px); align-items: center; min-height: calc(100dvh - 90px);
   }
-  .stage > div { position: absolute; inset: 0; }
-  .stage .hint { position: absolute; left: 14px; bottom: 12px; font-size: 11.5px; color: #6b6b78;
-    background: rgba(0,0,0,.4); padding: 5px 10px; border-radius: 8px; backdrop-filter: blur(8px); z-index: 2; }
-  .stage .replay { position: absolute; right: 12px; top: 12px; z-index: 2; font-size: 12px; padding: 6px 11px;
-    border-radius: 9px; border: 1px solid rgba(255,255,255,.12); background: rgba(0,0,0,.4); color: #e7e7ea; cursor: pointer; backdrop-filter: blur(8px); }
+  @media (max-width: 880px) { .hero { grid-template-columns: 1fr; min-height: 0; } }
+  .eyebrow {
+    display: inline-flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 700;
+    letter-spacing: .02em; color: var(--accent); border: 1px solid rgba(45,111,136,.28);
+    background: rgba(45,111,136,.07); padding: 6px 12px; border-radius: 999px;
+  }
+  h1 {
+    margin: 20px 0 0; font-size: clamp(40px, 6.4vw, 76px); line-height: 0.92;
+    letter-spacing: -0.072em; max-width: 12ch;
+  }
+  .accent { position: relative; color: var(--accent); white-space: nowrap; }
+  .accent::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 0.14em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 2px; opacity: .5;
+  }
+  .sub { max-width: 440px; margin: 18px 0 0; color: var(--muted); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.55; }
+  .cta { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    font-size: 14px; font-weight: 650; padding: 11px 18px; border-radius: 12px; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text);
+  }
+  .btn.primary { background: var(--text); color: #fff; border-color: var(--text); }
+  .btn:hover { transform: translateY(-1px); }
+  .npm {
+    margin-top: 18px; max-width: 440px; font: 13px ui-monospace, "SF Mono", Menlo, monospace; color: #2a3340;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 11px;
+    padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .npm button { background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; font-weight: 700; }
 
-  .drop { margin: 56px 0 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
-  @media (max-width: 880px) { .drop { grid-template-columns: 1fr; } }
-  .drop h2 { font-size: 24px; margin: 0 0 10px; }
-  .drop p { color: #a8a8b3; font-size: 15px; line-height: 1.6; }
-  .drop .note { font-size: 13px; color: #7dd3fc; margin-top: 14px; }
-  pre { margin: 0; background: #0a0a10; border: 1px solid #20202a; border-radius: 14px; padding: 20px;
-    font: 13px/1.7 ui-monospace, "SF Mono", Menlo, monospace; color: #d4d4dc; overflow-x: auto; }
-  .k { color: #f9a8d4; } .s { color: #86efac; } .t { color: #7dd3fc; } .c { color: #6b7280; }
+  /* ---- robot stage: bottom-anchored, faded feet, tracks cursor ---- */
+  .hero-robot { position: relative; width: 100%; min-height: clamp(440px, min(calc(100dvh - 90px), 60vw), 860px); align-self: end; }
+  #robot {
+    position: absolute; inset: 0;
+    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 82%, transparent 100%);
+  }
+  .hero-robot .hint { position: absolute; left: 4px; bottom: 8px; font-size: 11.5px; color: #8a93a0; }
+  .hero-robot .replay {
+    position: absolute; right: 4px; top: 4px; z-index: 2; font-size: 12px; font-weight: 600; padding: 6px 11px;
+    border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,.7); color: var(--text);
+    cursor: pointer; backdrop-filter: blur(8px);
+  }
+
+  /* ---- scroll-down: code ---- */
+  .install { padding: 60px 0 100px; }
+  .install h2 { font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.04em; margin: 0 0 8px; }
+  .install p.lead { color: var(--muted); font-size: 16px; margin: 0 0 28px; max-width: 560px; line-height: 1.55; }
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+  .codecard { background: #0c1320; border: 1px solid #1b2638; border-radius: 16px; overflow: hidden; position: relative; }
+  .codecard .head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1b2638; }
+  .codecard .head span { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #7e8aa0; }
+  .codecard .copy { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 8px; border: 1px solid #2a3850; background: #11192a; color: #cfe0f5; cursor: pointer; }
+  .codecard .copy:hover { background: #18223a; }
+  pre { margin: 0; padding: 18px 16px; font: 13px/1.7 ui-monospace, "SF Mono", Menlo, monospace; color: #d6e2f2; overflow-x: auto; white-space: pre; }
+  .span2 { grid-column: 1 / -1; }
+  .k { color: #f0a8c8; } .s { color: #9be0a8; } .t { color: #7fd0f0; } .c { color: #5d6b80; } .p { color: #c9b6f0; }
 </style>
 <script type="importmap">
 {
@@ -94,42 +122,60 @@
   </nav>
 
   <section class="hero">
-    <div>
-      <span class="tag">● Open source · MIT code · CC0 model</span>
-      <h1>A 3D robot mascot for your website.</h1>
-      <p class="sub">Drop-in React component. It floats, gestures, blinks, and watches the
-         visitor's cursor — and every color plus the chest logo are just props.
-         No Spline runtime, no build step.</p>
+    <div class="hero-copy">
+      <span class="eyebrow">● Open source · React · TypeScript</span>
+      <h1>A 3D robot for <span class="accent">your brand</span>.</h1>
+      <p class="sub">BrandBot is an open-source 3D mascot you drop into any React app.
+        It floats, blinks, and follows the cursor — your logo and colors are just props.
+        No Spline runtime.</p>
       <div class="npm"><span>npm install brandbot</span><button id="npmcopy">copy</button></div>
       <div class="cta">
         <a class="btn primary" href="./configure.html">Configure &amp; copy code →</a>
-        <a class="btn" href="https://github.com/Aidan945/brandbot" target="_blank">GitHub</a>
+        <a class="btn" href="#install">See the code</a>
       </div>
     </div>
-    <div class="stage" id="stage">
+
+    <div class="hero-robot">
       <div id="robot"></div>
       <button class="replay" id="replay">↺ Replay intro</button>
-      <span class="hint">drag to rotate · here in the demo only</span>
+      <span class="hint">follows your cursor</span>
     </div>
   </section>
 
-  <section class="drop">
-    <div>
-      <h2>Drop it in. It just stands there.</h2>
-      <p>In your app the robot sits locked in its box, faces forward, and follows the
-         cursor. No dragging, no spinning off — exactly what you want in a hero or a card.</p>
-      <p class="note">The showcase above adds <code>orbit</code> so you can spin it. Leave it off
-         for production (the default).</p>
-    </div>
-    <pre><span class="k">import</span> { <span class="t">BrandBot</span> } <span class="k">from</span> <span class="s">'brandbot'</span>
+  <section class="install" id="install">
+    <h2>Drop it in.</h2>
+    <p class="lead">Install the package, import the component, and render it in a sized box.
+       It ships TypeScript types and the model is bundled — nothing else to host.</p>
+    <div class="steps">
+      <div class="codecard">
+        <div class="head"><span>1 · Install</span><button class="copy" data-copy="install">Copy</button></div>
+        <pre id="code-install"><span class="c"># npm</span>
+npm install brandbot three react</pre>
+      </div>
+      <div class="codecard">
+        <div class="head"><span>Imperative (optional)</span><button class="copy" data-copy="ref">Copy</button></div>
+        <pre id="code-ref"><span class="k">const</span> bot = useRef(<span class="k">null</span>)
+&lt;<span class="t">BrandBot</span> <span class="p">ref</span>={bot} /&gt;
+bot.current.<span class="t">spin</span>()    <span class="c">// one full turn</span>
+bot.current.<span class="t">replay</span>()  <span class="c">// zoom-in intro</span></pre>
+      </div>
+      <div class="codecard span2">
+        <div class="head"><span>2 · Use it</span><button class="copy" data-copy="use">Copy</button></div>
+        <pre id="code-use"><span class="k">import</span> { <span class="t">BrandBot</span> } <span class="k">from</span> <span class="s">'brandbot'</span>
 
 <span class="k">export default function</span> <span class="t">Hero</span>() {
   <span class="k">return</span> (
-    &lt;<span class="t">div</span> style={{ height: <span class="s">520</span> }}&gt;
-      &lt;<span class="t">BrandBot</span> logoText=<span class="s">"ACME"</span> /&gt;
+    &lt;<span class="t">div</span> <span class="p">style</span>={{ height: <span class="s">600</span> }}&gt;
+      &lt;<span class="t">BrandBot</span>
+        <span class="p">primary</span>=<span class="s">"#13294b"</span>
+        <span class="p">eyes</span>=<span class="s">"#7fd4ff"</span>
+        <span class="p">logoText</span>=<span class="s">"ACME"</span>
+      /&gt;
     &lt;/<span class="t">div</span>&gt;
   )
 }</pre>
+      </div>
+    </div>
   </section>
 </div>
 
@@ -143,14 +189,43 @@ const html = htm.bind(createElement);
 function Showcase() {
   const bot = useRef(null);
   document.getElementById('replay').onclick = () => bot.current?.replay();
-  return html`<${BrandBot} ref=${bot} orbit intro logoText="BrandBot" trackPointer="window" />`;
+  return html`<${BrandBot} ref=${bot} intro logoText="BrandBot" trackPointer="window" />`;
 }
 createRoot(document.getElementById('robot')).render(html`<${Showcase} />`);
 
+// raw text the copy buttons write (kept in sync with the highlighted blocks)
+const SNIPPETS = {
+  install: 'npm install brandbot three react',
+  ref: `const bot = useRef(null)
+<BrandBot ref={bot} />
+bot.current.spin()    // one full turn
+bot.current.replay()  // zoom-in intro`,
+  use: `import { BrandBot } from 'brandbot'
+
+export default function Hero() {
+  return (
+    <div style={{ height: 600 }}>
+      <BrandBot
+        primary="#13294b"
+        eyes="#7fd4ff"
+        logoText="ACME"
+      />
+    </div>
+  )
+}`,
+};
+
+document.querySelectorAll('.copy').forEach(b => {
+  b.onclick = async () => {
+    await navigator.clipboard.writeText(SNIPPETS[b.dataset.copy]);
+    const t = b.textContent; b.textContent = 'Copied ✓';
+    setTimeout(() => (b.textContent = t), 1400);
+  };
+});
 document.getElementById('npmcopy').onclick = async (e) => {
   await navigator.clipboard.writeText('npm install brandbot');
   e.target.textContent = 'copied ✓';
-  setTimeout(() => (e.target.textContent = 'copy'), 1500);
+  setTimeout(() => (e.target.textContent = 'copy'), 1400);
 };
 </script>
 </body>

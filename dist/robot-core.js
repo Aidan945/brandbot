@@ -60,10 +60,10 @@ export function createBrandbot(container, options = {}) {
     const camera = new THREE.PerspectiveCamera(opts.camera.fov, 1, 0.1, 100);
     const camTarget = new THREE.Vector3(opts.camera.target[0], opts.camera.target[1], opts.camera.target[2]);
     const camEnd = new THREE.Vector3(opts.camera.position[0], opts.camera.position[1], opts.camera.position[2]);
-    // intro starts pushed back along the view axis (and a touch higher) and
-    // dollies in to the final position — a "zoom in" entrance
-    const camStart = camEnd.clone().sub(camTarget).multiplyScalar(1.75).add(camTarget);
-    camStart.y += 0.45;
+    // intro starts CLOSE (robot large) and pulls back to the final framing,
+    // so the robot shrinks from big into place — a "zoom out" entrance
+    const camStart = camEnd.clone().sub(camTarget).multiplyScalar(0.42).add(camTarget);
+    camStart.y += 0.2;
     camera.position.copy(opts.intro ? camStart : camEnd);
     camera.lookAt(camTarget);
     // drag-to-rotate, only when asked (demos). Off by default so the component
@@ -80,7 +80,7 @@ export function createBrandbot(container, options = {}) {
         controls.maxPolarAngle = 1.75;
         controls.enabled = !opts.intro; // handed control after the intro dolly
     }
-    const introState = { active: opts.intro, t: 0, dur: 1.3 };
+    const introState = { active: opts.intro, t: 0, dur: 1.5 };
     scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.55));
     const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(3.5, 7, 5);
@@ -424,17 +424,13 @@ export function createBrandbot(container, options = {}) {
     else
         console.error('BrandBot: pass `gltf` (JSON) or `modelUrl` in options');
     /* -------------------------------------------------------------- pointer */
-    const pointer = { x: 0, y: 0, active: false, last: 0 };
+    // store raw client coords; the head-aim maps them into the canvas's own
+    // normalized space each frame, so "cursor on the face" means looking
+    // straight ahead regardless of where the canvas sits on the page
+    const pointer = { clientX: 0, clientY: 0, active: false, last: 0 };
     function onPointerMove(e) {
-        if (opts.trackPointer === 'element') {
-            const r = container.getBoundingClientRect();
-            pointer.x = ((e.clientX - r.left) / r.width) * 2 - 1;
-            pointer.y = ((e.clientY - r.top) / r.height) * 2 - 1;
-        }
-        else {
-            pointer.x = (e.clientX / innerWidth) * 2 - 1;
-            pointer.y = (e.clientY / innerHeight) * 2 - 1;
-        }
+        pointer.clientX = e.clientX;
+        pointer.clientY = e.clientY;
         pointer.active = true;
         pointer.last = Date.now();
     }
@@ -491,6 +487,14 @@ export function createBrandbot(container, options = {}) {
                 drawEyes(eyeColor, Math.sin(Math.PI * p));
             }
         }
+        // map the cursor into the canvas's own NDC (origin = the rendered robot),
+        // so the aim is measured against where the robot actually is on screen
+        let px = 0, py = 0;
+        if (pointer.active) {
+            const r = renderer.domElement.getBoundingClientRect();
+            px = ((pointer.clientX - r.left) / (r.width || 1)) * 2 - 1;
+            py = ((pointer.clientY - r.top) / (r.height || 1)) * 2 - 1;
+        }
         if (headPivot) {
             // aim relative to the head's own screen position: cursor on the face
             // means looking straight ahead. Near-instant, jitter-smoothed only.
@@ -499,8 +503,8 @@ export function createBrandbot(container, options = {}) {
                 headPivot.getWorldPosition(_headNdc).project(camera);
                 const hx = _headNdc.x, hy = -_headNdc.y;
                 // tanh: steep near the head, saturating toward the screen edges
-                lookY = Math.tanh((pointer.x - hx) * 3.2) * 0.75;
-                lookX = THREE.MathUtils.clamp(Math.tanh((pointer.y - hy) * 3.0) * 0.45 + 0.06, -0.32, 0.5);
+                lookY = Math.tanh((px - hx) * 3.2) * 0.75;
+                lookX = THREE.MathUtils.clamp(Math.tanh((py - hy) * 3.0) * 0.45 + 0.06, -0.32, 0.5);
             }
             else {
                 lookY = Math.sin(t * 0.5) * 0.14;
@@ -512,7 +516,7 @@ export function createBrandbot(container, options = {}) {
         // the base stays planted: tiny gaze pitch, a hint of turn, nothing more
         const headPitchNow = headPivot ? headPivot.rotation.x : 0;
         if (waistPivot) {
-            waistFollow = THREE.MathUtils.damp(waistFollow, pointer.active ? pointer.x * 0.025 : 0, 14, dt);
+            waistFollow = THREE.MathUtils.damp(waistFollow, pointer.active ? px * 0.025 : 0, 14, dt);
             waistPivot.rotation.y = waistFollow + Math.sin(t * 0.45) * 0.018 + Math.sin(t * 0.21 + 1.3) * 0.01;
             waistPivot.rotation.z = Math.sin(t * 0.6 + 0.7) * 0.008;
             waistPivot.rotation.x = Math.sin(t * 1.6) * 0.008 + headPitchNow * 0.12;
@@ -556,14 +560,14 @@ export function createBrandbot(container, options = {}) {
             }
         }
         else {
-            leanFollow = THREE.MathUtils.damp(leanFollow, pointer.active ? pointer.x * 0.022 : 0, 14, dt);
+            leanFollow = THREE.MathUtils.damp(leanFollow, pointer.active ? px * 0.022 : 0, 14, dt);
             robot.rotation.y = leanFollow + (pointer.active ? 0 : Math.sin(t * 0.4) * 0.02);
         }
         // one-time zoom-in entrance; hands control to OrbitControls when finished
         if (introState.active) {
             introState.t += dt;
             const k = Math.min(introState.t / introState.dur, 1);
-            const e = 1 - Math.pow(1 - k, 3); // easeOutCubic
+            const e = k * k * (3 - 2 * k); // smoothstep: holds the large start, then eases out
             camera.position.lerpVectors(camStart, camEnd, e);
             camera.lookAt(camTarget);
             if (k >= 1) {
