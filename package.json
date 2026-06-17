@@ -1,7 +1,7 @@
 {
   "name": "brandbot",
   "version": "0.1.0",
-  "description": "A 3D robot mascot you brand with your own logo and colors — drop-in React component, cursor tracking, no Spline runtime.",
+  "description": "A 3D robot mascot you brand with your own logo and colors — a drop-in React component with cursor tracking, built on Three.js.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

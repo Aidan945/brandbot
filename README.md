@@ -1,6 +1,6 @@
 # BrandBot 🤖
 
-**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that floats, gestures, blinks, and watches the visitor's cursor — no Spline runtime. Written in TypeScript, ships full type declarations, and bundles the model so there's nothing to host.
+**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that floats, gestures, blinks, and watches the visitor's cursor. It renders with [Three.js](https://threejs.org), is written in TypeScript with full type declarations, and bundles the model — so there's nothing to configure or host. Works in any React app (see the Next.js note below).
 
 **[▶ Live demo](https://aidan945.github.io/brandbot/demo/)** · **[Configure & copy code](https://aidan945.github.io/brandbot/demo/configure.html)**
 
