@@ -65,15 +65,18 @@
   .btn:hover { background: #f1f4f7; }
   .filebtn input { display: none; }
 
-  .codecard { background: #0c1320; border: 1px solid #1b2638; border-radius: 16px; overflow: hidden; }
-  .codecard .chead { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #1b2638; }
-  .codecard .chead span { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #7e8aa0; }
-  .codecard .cbtns { display: flex; gap: 8px; }
-  .codecard .copy { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 8px; border: 1px solid #2a3850; background: #11192a; color: #cfe0f5; cursor: pointer; white-space: nowrap; }
-  .codecard .copy:hover { background: #18223a; }
-  .codecard .copy.accent { background: #1d4a63; border-color: #2d6f88; color: #e6f3fb; }
-  .codecard .copy.accent:hover { background: #235a78; }
-  .code { font: 12.5px/1.6 ui-monospace, "SF Mono", Menlo, monospace; color: #d6e2f2; white-space: pre; overflow-x: auto; padding: 16px; min-height: 120px; }
+  /* segmented tab control at the top of the side card */
+  .tabs { display: inline-flex; background: #eef1f4; border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+  .tabs button { border: none; background: none; font-size: 13px; font-weight: 600; color: var(--muted); padding: 6px 18px; border-radius: 8px; cursor: pointer; }
+  .tabs button.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .codebar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px; }
+  .cbtn { font-size: 12.5px; font-weight: 650; padding: 7px 13px; border-radius: 8px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; white-space: nowrap; }
+  .cbtn:hover { background: #f1f4f7; }
+  .cbtn.accent { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cbtn.accent:hover { background: #27617a; }
+  .codeblock { background: #0c1320; border: 1px solid #1b2638; border-radius: 12px; padding: 16px; margin: 0;
+    font: 12.5px/1.6 ui-monospace, "SF Mono", Menlo, monospace; color: #d6e2f2; white-space: pre; overflow-x: auto; }
+  .hint-line { font-size: 12px; color: #8a93a0; margin: 12px 2px 0; }
 </style>
 <script type="importmap">
 {
@@ -209,6 +212,7 @@ function App() {
   const [logoUrl, setLogoUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [tab, setTab] = useState('customize');
   const bot = useRef(null);
   const up = patch => setS(prev => ({ ...prev, ...patch }));
   const code = useMemo(() => codeFor(s, logoImage), [s, logoImage]);
@@ -230,46 +234,49 @@ function App() {
 
       <div class="side">
         <div class="card">
-          <h2>Customize</h2>
-          ${color('Body', 'primary')}
-          ${color('Joints', 'accent')}
-          ${color('Face plate', 'visor')}
-          ${color('Hands', 'hands')}
-          ${color('Eyes', 'eyes')}
-          ${color('Logo color', 'logoColor')}
-          <div class="row"><span>Logo text</span>
-            <input type="text" value=${s.logoText} placeholder="YOUR BRAND"
-              onInput=${e => { setLogoImage(null); setLogoUrl(''); up({ logoText: e.target.value }); }} /></div>
-          <div class="row"><span>Logo image</span>
-            <label class="btn filebtn">Upload
-              <input type="file" accept="image/*" onChange=${async e => {
-                const f = e.target.files[0]; if (f) { setLogoUrl(''); setLogoImage(await fileToDataURL(f)); }
-              }} /></label></div>
-          <div class="row"><span>…or image URL</span>
-            <input type="text" value=${logoUrl} placeholder="https://…/logo.png"
-              onInput=${e => { setLogoUrl(e.target.value); setLogoImage(e.target.value.trim() || null); }} /></div>
-          <div class="row"><span>Legs</span>
-            <input type="checkbox" class="toggle" checked=${s.legs} onChange=${e => up({ legs: e.target.checked })} /></div>
-          <div class="actions">
-            <button class="btn" onClick=${() => bot.current?.replay()}>Replay intro</button>
-            <button class="btn" onClick=${() => bot.current?.spin()}>Spin</button>
+          <div class="tabs">
+            <button class=${tab === 'customize' ? 'active' : ''} onClick=${() => setTab('customize')}>Customize</button>
+            <button class=${tab === 'code' ? 'active' : ''} onClick=${() => setTab('code')}>Code</button>
           </div>
-        </div>
 
-        <div class="codecard">
-          <div class="chead"><span>Your code</span>
-            <div class="cbtns">
-              <button class="copy accent" onClick=${async () => {
+          ${tab === 'customize' ? html`
+            ${color('Body', 'primary')}
+            ${color('Joints', 'accent')}
+            ${color('Face plate', 'visor')}
+            ${color('Hands', 'hands')}
+            ${color('Eyes', 'eyes')}
+            ${color('Logo color', 'logoColor')}
+            <div class="row"><span>Logo text</span>
+              <input type="text" value=${s.logoText} placeholder="YOUR BRAND"
+                onInput=${e => { setLogoImage(null); setLogoUrl(''); up({ logoText: e.target.value }); }} /></div>
+            <div class="row"><span>Logo image</span>
+              <label class="btn filebtn">Upload
+                <input type="file" accept="image/*" onChange=${async e => {
+                  const f = e.target.files[0]; if (f) { setLogoUrl(''); setLogoImage(await fileToDataURL(f)); }
+                }} /></label></div>
+            <div class="row"><span>…or image URL</span>
+              <input type="text" value=${logoUrl} placeholder="https://…/logo.png"
+                onInput=${e => { setLogoUrl(e.target.value); setLogoImage(e.target.value.trim() || null); }} /></div>
+            <div class="row"><span>Legs</span>
+              <input type="checkbox" class="toggle" checked=${s.legs} onChange=${e => up({ legs: e.target.checked })} /></div>
+            <div class="actions">
+              <button class="btn" onClick=${() => bot.current?.replay()}>Replay intro</button>
+              <button class="btn" onClick=${() => bot.current?.spin()}>Spin</button>
+            </div>
+          ` : html`
+            <div class="codebar">
+              <button class="cbtn accent" onClick=${async () => {
                 await navigator.clipboard.writeText(promptFor(s, logoImage));
                 setCopiedPrompt(true); setTimeout(() => setCopiedPrompt(false), 1500);
               }}>${copiedPrompt ? 'Copied ✓' : 'Copy prompt for agent'}</button>
-              <button class="copy" onClick=${async () => {
+              <button class="cbtn" onClick=${async () => {
                 await navigator.clipboard.writeText(code);
                 setCopied(true); setTimeout(() => setCopied(false), 1500);
               }}>${copied ? 'Copied ✓' : 'Copy code'}</button>
             </div>
-          </div>
-          <div class="code">${shortenDataUris(code)}</div>
+            <pre class="codeblock">${shortenDataUris(code)}</pre>
+            <p class="hint-line">Paste the code into your app, or hand the agent prompt to your AI coding assistant.</p>
+          `}
         </div>
       </div>
     </div>`;
