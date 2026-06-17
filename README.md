@@ -1,6 +1,6 @@
 # BrandBot 🤖
 
-**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that floats, gestures, blinks, and watches the visitor's cursor. It renders with [Three.js](https://threejs.org), is written in TypeScript with full type declarations, and bundles the model — so there's nothing to configure or host. Works in any React app (see the Next.js note below).
+**A 3D robot mascot you brand with your own logo and colors.** A drop-in React component that gestures, blinks, and follows the visitor's cursor. It renders with [Three.js](https://threejs.org), is written in TypeScript with full type declarations, and bundles the model — so there's nothing to configure or host. Works in any React app (see the Next.js note below).
 
 **[▶ Live demo](https://aidan945.github.io/brandbot/demo/)** · **[Configure & copy code](https://aidan945.github.io/brandbot/demo/configure.html)**
 
@@ -34,9 +34,9 @@ To have the robot rise from the bottom of a full-height hero with its legs fadin
 
 ```jsx
 <div style={{ height: '100vh', overflow: 'hidden',
-              WebkitMaskImage: 'linear-gradient(180deg,#000 92%,transparent 100%)' }}>
+              WebkitMaskImage: 'linear-gradient(180deg,#000 88%,transparent 100%)' }}>
   <div style={{ position: 'absolute', inset: 0,
-                transform: 'scale(1.1) translateY(4%)', transformOrigin: 'center top' }}>
+                transform: 'scale(1.1) translateY(8%)', transformOrigin: 'center top' }}>
     <BrandBot />
   </div>
 </div>
@@ -115,8 +115,8 @@ robot.set({ primary: '#13294b', logoText: 'ACME' });
 
 The `demo/` folder is a no-build static site (works on GitHub Pages):
 
-- **`demo/index.html`** — showcase: the robot in a chill framed stage with the zoom-in intro and drag-to-rotate.
-- **`demo/configure.html`** — live configurator with copy-the-code.
+- **`demo/index.html`** — showcase: the robot rising from a light-grid hero with the zoom-in intro and cursor tracking.
+- **`demo/configure.html`** — live configurator with tabbed code, "copy code", and "copy prompt for agent".
 
 Run `python3 -m http.server` in the package folder and open `demo/index.html`.
 
