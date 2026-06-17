@@ -162,6 +162,10 @@ const shortenDataUris = code =>
 // on: what the component is, how to install/use it, the full API, the chosen
 // config, integration notes, and a closing task that defers placement to you.
 function promptFor(s, logoImage) {
+  // never inline an uploaded image's base64 in the prompt — it would bloat it.
+  // Use a placeholder path and tell the agent to ask for the actual image.
+  const uploaded = typeof logoImage === 'string' && logoImage.startsWith('data:');
+  const snippet = codeFor(s, uploaded ? '/your-logo.png' : logoImage);
   return `I want to add **BrandBot** to my app — an open-source 3D robot mascot. It's a drop-in React component (TypeScript, built on Three.js) that renders an interactive 3D robot: it stays locked in place facing forward, follows the visitor's cursor with its head, blinks, and gestures. Every color and the chest logo are props, and the 3D model is bundled in the package, so there's nothing else to host.
 
 ## Install
@@ -172,8 +176,10 @@ npm install brandbot three react
 ## Usage
 The component fills its parent, so always give it a sized box. This is the exact configuration I want:
 \`\`\`jsx
-${codeFor(s, logoImage)}
-\`\`\`
+${snippet}
+\`\`\`${uploaded ? `
+
+NOTE: I'm using a custom uploaded logo on the robot's chest. The \`logoImage\` value above is just a placeholder path — ask me for the actual logo image (a file, or a URL), then wire it up as the \`logoImage\` prop (an imported asset or a public path).` : ''}
 
 ## Next.js / SSR
 WebGL can't be server-rendered — load it client-side only:
