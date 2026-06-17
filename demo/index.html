@@ -68,21 +68,21 @@
   /* ---- robot stage: fills the hero, legs run off the bottom of the screen ---- */
   .hero-robot {
     position: relative; align-self: stretch; overflow: hidden;
-    -webkit-mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
-    mask-image: linear-gradient(180deg, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 96%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 96%, transparent 100%);
   }
   /* scaled up and nudged down, then cropped at the bottom of the screen, so the
      robot is cut off around the shin right at the fold — responsive */
   #robot {
     position: absolute; left: 0; right: 0; top: 0; height: 100%;
-    transform: scale(1.1) translateY(4%); transform-origin: center top;
+    transform: scale(1.1) translateY(5.5%); transform-origin: center top;
   }
-  @media (max-width: 880px) { .hero-robot { height: 76vh; } #robot { transform: scale(1.06) translateY(3%); } }
-  .hero-robot .replay {
-    position: absolute; right: 4px; top: 4px; z-index: 2; font-size: 12px; font-weight: 600; padding: 6px 11px;
-    border-radius: 9px; border: 1px solid var(--border); background: rgba(255,255,255,.7); color: var(--text);
-    cursor: pointer; backdrop-filter: blur(8px);
+  @media (max-width: 880px) { .hero-robot { height: 76vh; } #robot { transform: scale(1.06) translateY(4%); } }
+  .replay {
+    margin-top: 16px; background: none; border: none; padding: 0; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 6px;
   }
+  .replay:hover { color: var(--accent); }
 
   /* ---- scroll-down: code ---- */
   .install { padding: 60px 0 100px; }
@@ -134,11 +134,11 @@
         <a class="btn primary" href="./configure.html">Configure &amp; copy code →</a>
         <a class="btn" href="#install">See the code</a>
       </div>
+      <div><button class="replay" id="replay">↺ Replay intro</button></div>
     </div>
 
     <div class="hero-robot">
       <div id="robot"></div>
-      <button class="replay" id="replay">↺ Replay intro</button>
     </div>
   </section>
 

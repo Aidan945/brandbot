@@ -87,8 +87,8 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
   // intro: start zoomed on the FACE, then pull back and down to the full-body
   // framing. The face shrinks and the head rises toward the top of frame as
   // the body is revealed below.
-  const introFromPos = new THREE.Vector3(camTarget.x, 4.05, camTarget.z + 1.4);
-  const introFromLook = new THREE.Vector3(camTarget.x, 4.18, camTarget.z);
+  const introFromPos = new THREE.Vector3(camTarget.x, 3.95, camTarget.z + 1.75);
+  const introFromLook = new THREE.Vector3(camTarget.x, 4.05, camTarget.z);
   const _introLook = new THREE.Vector3();
   camera.position.copy(opts.intro ? introFromPos : camEnd);
   camera.lookAt(opts.intro ? introFromLook : camTarget);
@@ -110,7 +110,7 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
   // the intro is armed but only *starts* once the model is in (see setupModel),
   // so the face-zoom plays when the robot is actually visible — not during the
   // async load when the canvas is still empty
-  const introState = { active: false, t: 0, dur: 1.7 };
+  const introState = { active: false, t: 0, dur: 1.9 };
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x3a3f4a, 0.55));
   const key = new THREE.DirectionalLight(0xffffff, 1.6);
@@ -482,6 +482,14 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
   const blink = { active: false, t0: 0, next: 3.5 };
   const spinState = { active: false, t: 0, dur: 1.1 };
   const easeInOut = (x: number) => x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2;
+  // the head snaps toward the cursor fast, but a per-frame angular cap keeps a
+  // big jump (cursor leaving and re-entering on the far side) from teleporting
+  const MAX_HEAD_SPEED = 11; // rad/s
+  const stepAngle = (cur: number, target: number, dt: number) => {
+    const next = THREE.MathUtils.damp(cur, target, 24, dt);
+    const cap = MAX_HEAD_SPEED * dt;
+    return cur + THREE.MathUtils.clamp(next - cur, -cap, cap);
+  };
   let raf = 0, disposed = false;
 
   function tick(): void {
@@ -530,8 +538,8 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
         lookY = Math.sin(t * 0.5) * 0.14;
         lookX = Math.sin(t * 0.8) * 0.05 + 0.04;
       }
-      headPivot.rotation.y = THREE.MathUtils.damp(headPivot.rotation.y, lookY, 24, dt);
-      headPivot.rotation.x = THREE.MathUtils.damp(headPivot.rotation.x, lookX, 24, dt);
+      headPivot.rotation.y = stepAngle(headPivot.rotation.y, lookY, dt);
+      headPivot.rotation.x = stepAngle(headPivot.rotation.x, lookX, dt);
     }
 
     // the base stays planted: tiny gaze pitch, a hint of turn, nothing more
@@ -587,7 +595,8 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
     if (introState.active) {
       introState.t += dt;
       const k = Math.min(introState.t / introState.dur, 1);
-      const e = k * k * (3 - 2 * k);             // smoothstep: holds the face, then eases out
+      // easeInOutQuart: lingers on the face, accelerates, then settles
+      const e = k < 0.5 ? 8 * k * k * k * k : 1 - Math.pow(-2 * k + 2, 4) / 2;
       camera.position.lerpVectors(introFromPos, camEnd, e);
       _introLook.lerpVectors(introFromLook, camTarget, e);
       camera.lookAt(_introLook);
