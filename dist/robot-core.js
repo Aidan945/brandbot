@@ -490,7 +490,7 @@ export function createBrandbot(container, options = {}) {
         // backgrounded tab) can't jump the intro past its face-zoom in one step
         const dt = Math.min(clock.getDelta(), 0.05);
         const t = clock.elapsedTime;
-        robot.position.y = Math.sin(t * 0.9) * 0.025 + 0.02; // gentle float
+        robot.position.y = 0; // locked vertically — no float/bounce
         // occasional blink: rows collapse and reopen over ~0.22s
         if (!blink.active && t > blink.next) {
             blink.active = true;

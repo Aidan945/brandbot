@@ -500,7 +500,7 @@ export function createBrandbot(container: HTMLElement, options: BrandbotOptions 
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
-    robot.position.y = Math.sin(t * 0.9) * 0.025 + 0.02;   // gentle float
+    robot.position.y = 0;   // locked vertically — no float/bounce
 
     // occasional blink: rows collapse and reopen over ~0.22s
     if (!blink.active && t > blink.next) { blink.active = true; blink.t0 = t; }
