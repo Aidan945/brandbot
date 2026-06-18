@@ -1,4 +1,4 @@
-MIT License (applies to all code in this package)
+MIT License
 
 Copyright (c) 2026 Aidan Zarski
 
@@ -19,24 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
---------------------------------------------------------------------------
-
-3D Model provenance (src/nexbot-model.js)
-
-The bundled robot model is "NEXBOT - robot character concept", a Spline
-Community file created by the Spline team, exported to glTF.
-
-  Source: https://community.spline.design/file/87343305-102d-4670-bb8e-38252064de27
-  License: CC0 1.0 Universal (public domain dedication)
-           https://creativecommons.org/publicdomain/zero/1.0/
-
-Spline's Community Platform documentation
-(https://docs.spline.design/doc/community-platform/docSaqY7mlFz) states:
-"All the community files are licensed under CC0 1.0 Universal Deed."
-(Verified 2026-06-12. Archived evidence:
-https://web.archive.org/web/20260612220813/https://docs.spline.design/basics/community-platform
-https://web.archive.org/web/20260612220949/https://community.spline.design/file/87343305-102d-4670-bb8e-38252064de27 )
-
-CC0 places the work in the public domain: it may be used, modified, and
-redistributed for any purpose, including commercially, without attribution.
